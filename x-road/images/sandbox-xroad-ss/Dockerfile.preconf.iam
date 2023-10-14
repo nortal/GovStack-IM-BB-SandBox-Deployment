@@ -1,0 +1,7 @@
+ARG IMAGE
+FROM $IMAGE
+
+ARG CONFIG
+COPY $CONFIG /var/lib/xroad/conf_backup.tar
+
+COPY files/proxy-ui-api-1.0.jar /usr/share/xroad/jlib

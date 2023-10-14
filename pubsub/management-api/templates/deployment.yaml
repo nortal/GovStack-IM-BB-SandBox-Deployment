@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: management-api
+spec:
+  selector:
+    matchLabels:
+      app: management-api
+  replicas: {{ .Values.deployment.replicas }}
+  template:
+    metadata:
+      labels:
+        app: management-api
+    spec:
+      containers:
+        - name: management-api
+          image: "{{ .Values.managementApi.image.repository }}:{{ .Values.managementApi.image.tag }}"
+          args: {{ .Values.managementApi.args }}
+          imagePullPolicy: {{ .Values.managementApi.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.managementApi.port }}
+          env:
+            - name: AMQPHUB_AMQP10JMS_REMOTE-URL
+              value: {{ .Values.managementApi.artemis.remoteUrl }}
+            - name: AMQPHUB_AMQP10JMS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: artemis
+                  key: AMQ_USER
+            - name: AMQPHUB_AMQP10JMS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: artemis
+                  key: AMQ_PASSWORD
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: im-msg-db-schema
+                  key: JDBC_URL
+            - name: SPRING_DATASOURCE_SCHEMA-NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: im-msg-db-schema
+                  key: DB_SCHEMA
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: im-msg-db-schema
+                  key: DB_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: im-msg-db-schema
+                  key: DB_PASSWORD
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_SECURITY_SERVER_BASE_URL
+              value: {{ .Values.managementApi.xroadAdminClient.securityServerBaseUrl }}
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_API_KEY
+              value: {{ .Values.managementApi.xroadAdminClient.apiKey }}
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_API_KEY_PREFIX
+              value: {{ .Values.managementApi.xroadAdminClient.apiKeyPrefix }}
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_PUBSUB_SUBSYSTEM_IDENTIFIER
+              value: {{ .Values.managementApi.xroadAdminClient.pubsubSubsystemIdentifier }}
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_TRUSTSTORE
+              value: {{ .Values.managementApi.xroadAdminClient.truststore }}
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_TRUSTSTORE_PASSWORD
+              value: {{ .Values.managementApi.xroadAdminClient.truststorePassword }}
+            - name: MANAGEMENT_XROAD_ADMIN_CLIENT_DISABLE_TLS_CERTIFICATE_VERIFICATION
+              value: {{ .Values.managementApi.xroadAdminClient.disableTlsCertificateVerification | quote }}
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: {{ .Values.managementApi.oauth2.issuerUri }}
+            - name: MANAGEMENT_API_CORS_ALLOWED_ORIGINS
+              value: {{ .Values.managementApi.cors.allowedOrigins | quote }}
+            - name: MANAGEMENT_API_CORS_ALLOWED_METHODS
+              value: {{ .Values.managementApi.cors.allowedMethods | quote }}
+            - name: MANAGEMENT_API_CORS_ALLOWED_HEADERS
+              value: {{ .Values.managementApi.cors.allowedHeaders | quote }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sandbox-im-x-road
+description: GovStack Sandbox BB IM - X-Road
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

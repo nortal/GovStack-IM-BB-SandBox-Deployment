@@ -1,0 +1,28 @@
+messagingApi:
+  image:
+    repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/pubsub/messaging-api
+    tag: 0.0.1-develop
+    pullPolicy: IfNotPresent
+  args: []
+  artemis:
+    url: "amqp://artemis:5672"
+    host: "artemis"
+    port: "5672"
+
+service:
+  ports:
+    - name: http
+      port: 8090
+      targetPort: 8090
+    - name: another-port
+      port: 9000
+      targetPort: 9000
+  type: NodePort
+
+serviceExt:
+  enabled: true
+  topLevelDomainName: ""
+  subnetAllowList: ""
+
+deployment:
+   replicas: 1

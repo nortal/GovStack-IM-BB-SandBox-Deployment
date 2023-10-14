@@ -1,0 +1,5 @@
+ARG IMAGE
+FROM $IMAGE
+
+COPY ca_backup.tar /var/lib/xroad/
+COPY cs_conf_backup.tar /var/lib/xroad/conf_backup.tar

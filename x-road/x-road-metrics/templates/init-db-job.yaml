@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: xroad-metrics-database-init-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: init-db
+          image: "{{ .Values.database.initDb.image }}:{{ .Values.database.initDb.image_tag }}"
+          env:
+            - name: MONGO_HOST
+              value: {{ .Values.database.service.host }}
+            - name: MONGO_PORT
+              value: "{{ .Values.database.service.port | toString }}"
+            - name: MONGO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: xroad-metrics-credentials
+                  key: rootUser
+            - name: MONGO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: xroad-metrics-credentials
+                  key: rootPassword
+            - name: XROAD_INSTANCE
+              value: {{ .Values.xroad.instance }}
+            - name: ANALYZER_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                 name: xroad-metrics-credentials
+                 key: analyzerPassword
+            - name: ANALYZER_INTERFACE_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                 name: xroad-metrics-credentials
+                 key: analyzerInterfacePassword
+            - name: ANONYMIZER_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                   name: xroad-metrics-credentials
+                   key: anonymizerPassword
+            - name: COLLECTOR_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                 name: xroad-metrics-credentials
+                 key: collectorPassword
+            - name: CORRECTOR_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                   name: xroad-metrics-credentials
+                   key: correctorPassword
+            - name: REPORTS_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                   name: xroad-metrics-credentials
+                   key: reportsPassword
+      restartPolicy: OnFailure

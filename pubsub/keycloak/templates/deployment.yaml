@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+  replicas: {{ .Values.deployment.replicas }}
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      volumes:
+        - name: realm-config
+          configMap:
+            name: realm-config
+      containers:
+        - name: keycloak
+          image: "{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
+          args: {{ .Values.keycloak.args }}
+          imagePullPolicy: {{ .Values.keycloak.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.keycloak.httpPort }}
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/keycloak/data/import
+# Interim we disabled readinessProbe and livenessProbe
+# because recently service start took ~100 seconds instead 20 and POD failed to start
+#          readinessProbe:
+#            httpGet:
+#              path: /realms/master/.well-known/openid-configuration
+#              port: {{ .Values.keycloak.httpPort }}
+#            initialDelaySeconds: {{ .Values.deployment.readinessProbe.initialDelaySeconds}}
+#            periodSeconds: {{ .Values.deployment.readinessProbe.periodSeconds}}
+#            timeoutSeconds: {{ .Values.deployment.readinessProbe.timeoutSeconds}}
+#          livenessProbe:
+#            httpGet:
+#              path: /realms/master/.well-known/openid-configuration
+#              port: {{ .Values.keycloak.httpPort }}
+#            initialDelaySeconds: {{ .Values.deployment.readinessProbe.initialDelaySeconds}}
+#            periodSeconds: {{ .Values.deployment.readinessProbe.periodSeconds}}
+#            timeoutSeconds: {{ .Values.deployment.readinessProbe.timeoutSeconds}}
+          env:
+            - name: HTTP_PORT
+              value: "{{ .Values.keycloak.httpPort }}"
+            - name: DB
+              value: {{ .Values.keycloak.databaseVendor }}
+            - name: KEYCLOAK_ADMIN
+              value: {{ .Values.keycloak.adminUser }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.adminPassword }}
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"

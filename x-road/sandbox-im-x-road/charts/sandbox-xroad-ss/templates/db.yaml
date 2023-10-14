@@ -1,0 +1,74 @@
+{{- range $server, $tag := .Values.servers }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: pvc-sandbox-xroad-{{ $server }}-db
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if $.Values.global.storageClassName }}
+  storageClassName: {{ $.Values.global.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $.Values.dbStorage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: sandbox-xroad-{{ $server }}-db
+spec:
+  clusterIP: None
+  ports:
+    - port: 5432
+  selector:
+    app: sandbox-xroad-{{ $server }}-db
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: sandbox-xroad-{{ $server }}-db
+spec:
+  replicas: 1
+  serviceName: sandbox-xroad-{{ $server }}-db
+  selector:
+    matchLabels:
+      app: sandbox-xroad-{{ $server }}-db
+  template:
+    metadata:
+      labels:
+        app: sandbox-xroad-{{ $server }}-db
+    spec:
+      containers:
+        - name: sandbox-xroad-{{ $server }}-db
+          image: postgres:12
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              memory: {{ $.Values.dbMemory | default "256Mi" | quote }}          
+              cpu: "500m"
+            limits:
+              memory: {{ $.Values.dbMemory | default "512Gi" | quote }}
+              cpu: "1"
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sandbox-xroad-{{ $server }}
+                  key: dbPassword
+            - name: PGDATA
+              value: /mnt/pgdata/data
+          volumeMounts:
+            - mountPath: /mnt/pgdata
+              name: pgdata
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: pvc-sandbox-xroad-{{ $server }}-db
+{{- end }}

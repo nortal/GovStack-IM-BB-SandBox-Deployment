@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: artemis
+data:
+  AMQ_EXTRA_ARGS: "{{ .Values.artemis.extraArgs }}"
+  AMQ_QUEUES: "{{ .Values.artemis.queues }}"
+  LOG4J2_PROPERTIES: |-
+    {{ .Files.Get .Values.logging.loggingProperties | nindent 4 }}

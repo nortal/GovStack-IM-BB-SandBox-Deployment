@@ -1,0 +1,26 @@
+auth:
+  enablePostgresUser: true
+  postgresPassword: "StrongPassword"
+  username: "im_msg_usr"
+  password: "im_msg_pass"
+  database: "im_msg_db"
+primary:
+  persistence:
+    enabled: true
+  service:
+#    annotations:
+#      external-dns.alpha.kubernetes.io/evaluateTargetHealth: 'true'
+#      external-dns.alpha.kubernetes.io/hostname: "im-db.{{ .Values.topLevelDomainName }}"
+#      service.beta.kubernetes.io/load-balancer-source-ranges: "{{ .Values.subnetAllowList }}"
+#      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+#      service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+#      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+#    type: LoadBalancer
+    type: NodePort
+    ports:
+      postgresql: 5432
+  initdb:
+    scripts:
+      init-db.sql: |-
+        CREATE SCHEMA im_msg;
+        GRANT ALL ON SCHEMA im_msg TO im_msg_usr;

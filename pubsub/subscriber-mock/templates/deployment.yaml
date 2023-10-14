@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscriber-mock
+spec:
+  selector:
+    matchLabels:
+      app: subscriber-mock
+  replicas: {{ .Values.deployment.replicas }}
+  template:
+    metadata:
+      labels:
+        app: subscriber-mock
+    spec:
+      containers:
+        - name: subscriber-mock
+          image: "{{ .Values.subscriberMock.image.repository }}:{{ .Values.subscriberMock.image.tag }}"
+          args: {{ .Values.subscriberMock.args }}
+          imagePullPolicy: {{ .Values.subscriberMock.image.pullPolicy }}
+          ports:
+            {{- range .Values.service.ports }}
+            - name: {{ .name }}
+              containerPort: {{ .port }}
+              protocol: TCP
+            {{- end }}

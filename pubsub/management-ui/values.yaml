@@ -1,0 +1,22 @@
+managementUi:
+  image:
+    repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/pubsub/management-ui
+    tag: 0.0.1-feature-m604017-13-push-to-ecr-949911eb
+    pullPolicy: IfNotPresent
+  port: 8080
+  args: []
+  iamIssuerUri: "http://iam.im.sandbox-playground.com:8089/realms/pubsub-realm"
+  oidcClientSecret: "pubsub-management-ui-secret"
+  oidcClientId: "pubsub-management-ui"
+  managementApiUri: "http://management-api.im.sandbox-playground.com:8080"
+
+service:
+  type: NodePort
+
+serviceExt:
+  enabled: true
+  topLevelDomainName: ""
+  subnetAllowList: ""
+
+deployment:
+   replicas: 1

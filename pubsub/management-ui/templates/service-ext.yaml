@@ -1,0 +1,20 @@
+{{- if .Values.serviceExt.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: management-ui-ext
+  annotations:
+    external-dns.alpha.kubernetes.io/evaluateTargetHealth: 'true'
+    external-dns.alpha.kubernetes.io/hostname: "management-ui.{{ .Values.ingress.topLevelDomainName }}"
+    service.beta.kubernetes.io/load-balancer-source-ranges: "{{ .Values.ingress.subnetAllowList }}"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+spec:
+  selector:
+    app: management-ui
+  ports:
+    - protocol: TCP
+      port: {{ .Values.managementUi.port }}
+  type: LoadBalancer
+{{- end }}

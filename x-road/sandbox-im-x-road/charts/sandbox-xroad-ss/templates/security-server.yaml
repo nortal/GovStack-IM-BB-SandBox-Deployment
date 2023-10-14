@@ -1,0 +1,131 @@
+{{- range $server, $tag := .Values.servers }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: pvc-sandbox-xroad-{{ $server }}-config
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: sandbox-xroad-{{ $server }}
+spec:
+  type: ClusterIP
+  selector:
+    app: sandbox-xroad-{{ $server }}
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      name: config
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: client-http
+    - port: 8443
+      targetPort: 8443
+      protocol: TCP
+      name: client-https
+    - port: 5500
+      targetPort: 5500
+      protocol: TCP
+      name: messaging
+    - port: 5577
+      targetPort: 5577
+      protocol: TCP
+      name: ocsp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: sandbox-xroad-{{ $server }}
+spec:
+  selector:
+    matchLabels:
+      app: sandbox-xroad-{{ $server }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sandbox-xroad-{{ $server }}
+    spec:
+      containers:
+        - name: xroad-security-server
+          image: {{ printf "%s/%s:%s" $.Values.global.registry $.Values.serverImage $tag | quote }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: {{ $.Values.serverMem | default "2Gi" | quote }}
+              cpu: "500m"
+            limits:
+              memory: {{ $.Values.serverMem | default "4Gi" | quote }}
+              cpu: "2"
+          env:
+            - name: XROAD_TOKEN_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: sandbox-xroad-{{ $server }}
+                  key: tokenPin
+            - name: XROAD_DB_HOST
+              value: "sandbox-xroad-{{ $server }}-db"
+            - name: XROAD_DB_PORT
+              value: "5432"
+            - name: XROAD_DB_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: sandbox-xroad-{{ $server }}
+                  key: dbPassword
+            - name: XROAD_PROXY_UI_API_PARAMS
+              value: >
+                -Dxroad.ui.authentication-method=OAUTH2
+                -Dspring.security.oauth2.client.registration.iam-provider.client-id=xroad-security-server-{{ $server }}
+                -Dspring.security.oauth2.client.registration.iam-provider.client-secret=xroad-security-server-{{ $server }}-secret
+                -Dspring.security.oauth2.client.registration.iam-provider.authorization-grant-type=authorization_code
+                -Dspring.security.oauth2.client.registration.iam-provider.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}
+                -Dspring.security.oauth2.client.registration.iam-provider.scope=openid
+                -Dspring.security.oauth2.client.registration.iam-provider.provider=iam-provider
+                -Dspring.security.oauth2.client.provider.iam-provider.issuer-uri={{ $.Values.iamIssuerUri }}
+                -Dspring.security.oauth2.client.provider.iam-provider.authorization-uri={{ $.Values.iamAuthorizationUri }}
+                -Dspring.security.oauth2.client.provider.iam-provider.token-uri={{ $.Values.iamTokenUri }}
+                -Dspring.security.oauth2.client.provider.iam-provider.user-info-uri={{ $.Values.iamUserInfoUri }}
+                -Dspring.security.oauth2.client.provider.iam-provider.user-name-attribute=preferred_username
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+            - containerPort: 4000
+            - containerPort: 5500
+            - containerPort: 5577
+            - containerPort: 5588
+          volumeMounts:
+            - mountPath: /etc/xroad
+              name: xroad-config
+          livenessProbe:
+            tcpSocket:
+              port: 5500
+            failureThreshold: 2
+            periodSeconds: 60
+          startupProbe:
+            # Note! This probe assumes a pre-configured server
+            # uninitialized server would report failure until
+            # configured
+            httpGet:
+              path: /
+              port: 5588
+            failureThreshold: 90
+            periodSeconds: 20
+      volumes:
+        - name: xroad-config
+          persistentVolumeClaim:
+            claimName: pvc-sandbox-xroad-{{ $server }}-config
+  strategy:
+    type: Recreate
+{{- end }}

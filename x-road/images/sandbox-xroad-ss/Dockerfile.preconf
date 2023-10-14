@@ -1,0 +1,5 @@
+ARG IMAGE
+FROM $IMAGE
+
+ARG CONFIG
+COPY $CONFIG /var/lib/xroad/conf_backup.tar

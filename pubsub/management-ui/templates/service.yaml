@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: management-ui
+spec:
+  selector:
+    app: management-ui
+  ports:
+    - protocol: TCP
+      targetPort: {{ .Values.managementUi.port }}
+      port: {{ .Values.managementUi.port }}
+  type: {{ .Values.service.type }}

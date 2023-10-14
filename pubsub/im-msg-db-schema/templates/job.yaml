@@ -1,0 +1,24 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: im-msg-db-schema
+spec:
+  completions: 1
+  backoffLimit: 1
+  template:
+    metadata:
+      name: im-msg-db-schema
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: im-msg-db-schema
+          image: "{{ .Values.imMsgBbSchema.image.repository }}:{{ .Values.imMsgBbSchema.image.tag }}"
+          args: {{ .Values.imMsgBbSchema.args }}
+          imagePullPolicy: {{ .Values.imMsgBbSchema.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: im-msg-db-schema
+            - secretRef:
+                name: im-msg-db-schema
+      restartPolicy: Never

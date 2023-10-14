@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: management-api
+spec:
+  selector:
+    app: management-api
+  ports:
+    - protocol: TCP
+      targetPort: {{ .Values.managementApi.port }}
+      port: {{ .Values.managementApi.port }}
+  type: {{ .Values.service.type }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: x-road-niis-ss
+description: X-Road niis SS - X-Road
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

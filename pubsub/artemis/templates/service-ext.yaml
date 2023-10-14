@@ -1,0 +1,24 @@
+---
+{{- if .Values.serviceExt.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: artemis-ext
+  annotations:
+    external-dns.alpha.kubernetes.io/evaluateTargetHealth: 'true'
+    external-dns.alpha.kubernetes.io/hostname: "artemis.{{ .Values.artemis.topLevelDomainName }}"
+    service.beta.kubernetes.io/load-balancer-source-ranges: "{{ .Values.artemis.subnetAllowList }}"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+spec:
+  type: LoadBalancer
+  ports:
+    {{- range .Values.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      name: {{ .name }}
+    {{- end }}
+  selector:
+    app: artemis
+{{- end }}

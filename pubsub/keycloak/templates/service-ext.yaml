@@ -1,0 +1,27 @@
+---
+{{- if .Values.serviceExt.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-ext
+  annotations:
+    external-dns.alpha.kubernetes.io/evaluateTargetHealth: 'true'
+    external-dns.alpha.kubernetes.io/hostname: "iam.{{ .Values.ingress.topLevelDomainName }}"
+    service.beta.kubernetes.io/load-balancer-source-ranges: "{{ .Values.ingress.subnetAllowList }}"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+# Uncomment to enable TLS on ELB, once hostname-url and hostname-admin-url
+# is passed to Keycloak in x-road/keycloak/values.yaml
+#    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: >-
+#      arn:aws:acm:eu-north-1:466724658082:certificate/c6660618-4a70-4dd8-9ced-dbc532411864
+#    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '{{ .Values.keycloak.httpPort }}'
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.keycloak.httpPort }}
+  type: LoadBalancer
+{{- end }}

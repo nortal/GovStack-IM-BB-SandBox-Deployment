@@ -1,0 +1,33 @@
+{{- if .Values.global.serviceExt.enabled }}
+{{- range $server, $tag := .Values.servers }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: sandbox-xroad-{{ $server }}-ext
+  annotations:
+    external-dns.alpha.kubernetes.io/evaluateTargetHealth: 'true'
+    external-dns.alpha.kubernetes.io/hostname: "{{ $server }}.{{ $.Values.global.serviceExt.topLevelDomainName }}"
+    meta.helm.sh/release-name: sandbox-im-xroad
+    meta.helm.sh/release-namespace: sandbox-im
+    service.beta.kubernetes.io/load-balancer-source-ranges: "{{ $.Values.global.serviceExt.subnetAllowList }}"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2" # Default 6
+#    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
+#    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ $.Values.global.serviceExt.acmCertificateArn }}
+#    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '4000'
+spec:
+  type: LoadBalancer
+  selector:
+    app: sandbox-xroad-{{ $server }}
+  ports:
+    - port: 4000
+      protocol: TCP
+      name: admin
+    - port: 8443
+      protocol: TCP
+      name: client-https
+{{- end }}
+{{- end }}

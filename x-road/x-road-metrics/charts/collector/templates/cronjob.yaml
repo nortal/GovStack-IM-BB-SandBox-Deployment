@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.cronjob.name }}
+spec:
+  schedule: "{{ .Values.cronjob.schedule }}"
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: {{ .Values.cronjob.name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              resources:
+              {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - mountPath: /tmp/templates
+                  name: settings-volume
+              env:
+                - name: COLLECTOR_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: xroad-metrics-credentials
+                      key: collectorPassword
+          volumes:
+            - name: settings-volume
+              configMap:
+                name: {{ include "collector.fullname" . }}
+          restartPolicy: OnFailure

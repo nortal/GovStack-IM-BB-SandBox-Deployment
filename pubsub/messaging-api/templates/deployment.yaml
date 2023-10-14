@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-api
+spec:
+  selector:
+    matchLabels:
+      app: messaging-api
+  replicas: {{ .Values.deployment.replicas }}
+  template:
+    metadata:
+      labels:
+        app: messaging-api
+    spec:
+      containers:
+        - name: messaging-api
+          image: "{{ .Values.messagingApi.image.repository }}:{{ .Values.messagingApi.image.tag }}"
+          args: {{ .Values.messagingApi.args }}
+          imagePullPolicy: {{ .Values.messagingApi.image.pullPolicy }}
+          ports:
+            {{- range .Values.service.ports }}
+            - name: {{ .name }}
+              containerPort: {{ .port }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: QUARKUS_QPID_JMS_URL
+              value: "{{ .Values.messagingApi.artemis.url }}"
+            - name: QUARKUS_QPID_JMS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: artemis
+                  key: AMQ_USER
+            - name: QUARKUS_QPID_JMS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: artemis
+                  key: AMQ_PASSWORD
+            - name: AMQP_HOST
+              value: "{{ .Values.messagingApi.artemis.host }}"
+            - name: AMQP_PORT
+              value: "{{ .Values.messagingApi.artemis.port }}"
+            - name: AMQP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: artemis
+                  key: AMQ_USER
+            - name: AMQP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: artemis
+                  key: AMQ_PASSWORD
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: im-msg-db-schema
+                  key: JDBC_URL
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: im-msg-db-schema
+                  key: DB_USERNAME
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: im-msg-db-schema
+                  key: DB_PASSWORD

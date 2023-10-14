@@ -1,0 +1,4 @@
+---
+tokenPin: "1234"
+serverImage: "im/x-road/central-server"
+serverTag: "7.2.2-IAM-cs"

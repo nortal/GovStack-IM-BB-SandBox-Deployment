@@ -1,0 +1,43 @@
+keycloak:
+  image:
+    repository: quay.io/keycloak/keycloak
+    tag: 21.1
+    pullPolicy: IfNotPresent
+  httpPort: 8089
+  adminUser: admin
+  adminPassword: admin
+  databaseVendor: dev-mem
+  args:
+    [
+      "start-dev",
+      "--http-port=8089",
+      "--import-realm",
+# This needed to properly expose KeyCloak through TLS,
+# but Keycloak endpoint should be changed
+# from http://keycloak:8089 to https://iam.gvc.lt.nortal.com:8089 everywhere!
+#      "--hostname-url=https://iam.gvc.lt.nortal.com:8089",
+#      "--hostname-admin-url=https://iam.gvc.lt.nortal.com:8089",
+#      "--hostname-strict=true",
+    ]
+
+service:
+  type: NodePort
+
+serviceExt:
+  enabled: true
+
+deployment:
+  replicas: 1
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+
+ingress:
+  enabled: false
+  topLevelDomainName: ""
+  subnetAllowList: ""
+
+config:
+  enabled: true
+  realmConfigFile: "config/pubsub-realm-nortal.json"

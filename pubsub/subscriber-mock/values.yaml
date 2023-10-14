@@ -1,0 +1,16 @@
+subscriberMock:
+  image:
+    repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/pubsub/subscriber-mock
+    tag: 0.0.1-develop
+    pullPolicy: IfNotPresent
+  args: []
+
+service:
+  ports:
+    - name: http
+      port: 4000
+      targetPort: 4000
+  type: NodePort
+
+deployment:
+   replicas: 1

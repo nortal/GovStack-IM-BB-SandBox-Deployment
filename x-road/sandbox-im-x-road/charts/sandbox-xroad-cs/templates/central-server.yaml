@@ -1,0 +1,131 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: pvc-sandbox-xroad-cs-config
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: pvc-sandbox-xroad-cs-test-ca
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: sandbox-xroad-cs
+spec:
+  selector:
+    matchLabels:
+      app: sandbox-xroad-cs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sandbox-xroad-cs
+    spec:
+      containers:
+        - name: xroad-central-server
+          image: {{ printf "%s/%s:%s" .Values.global.registry .Values.serverImage .Values.serverTag | quote }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: {{ .Values.serverMem | default "2Gi" | quote }}
+              cpu: "500m"
+            limits:
+              memory: {{ .Values.serverMem | default "4Gi" | quote }}
+              cpu: "2"
+          env:
+            - name: XROAD_TOKEN_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: sandbox-xroad-cs
+                  key: tokenPin
+            - name: XROAD_DB_HOST
+              value: "sandbox-xroad-cs-db"
+            - name: XROAD_DB_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: sandbox-xroad-cs
+                  key: dbPassword
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+            - containerPort: 4000
+            - containerPort: 4001
+            - containerPort: 4002
+            - containerPort: 8888
+            - containerPort: 8899
+            - containerPort: 9998
+          volumeMounts:
+            - mountPath: /etc/xroad
+              name: xroad-config
+            - mountPath: /home/ca
+              name: xroad-test-ca
+          livenessProbe:
+            httpGet:
+              path: /internalconf
+              port: 80
+            failureThreshold: 2
+            periodSeconds: 60
+          startupProbe:
+            httpGet:
+              path: /internalconf
+              port: 80
+            failureThreshold: 60
+            periodSeconds: 20
+      volumes:
+        - name: xroad-test-ca
+          persistentVolumeClaim:
+            claimName: pvc-sandbox-xroad-cs-test-ca
+        - name: xroad-config
+          persistentVolumeClaim:
+            claimName: pvc-sandbox-xroad-cs-config
+  strategy:
+    type: Recreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: sandbox-xroad-cs
+spec:
+  type: ClusterIP
+  selector:
+    app: sandbox-xroad-cs
+  ports:
+    - port: 4000
+      protocol: TCP
+      name: admin
+    - port: 4001
+      protocol: TCP
+      name: register
+    - port: 4002
+      protocol: TCP
+      name: management
+    - port: 80
+      protocol: TCP
+      name: globalconf
+    - port: 8888
+      protocol: TCP
+      name: ocsp
+    - port: 8899
+      protocol: TCP
+      name: tsa
+    - port: 9998
+      protocol: TCP
+      name: ca

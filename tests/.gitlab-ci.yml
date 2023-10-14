@@ -1,0 +1,42 @@
+stack-health-checks:
+  stage: health_check
+  image:
+    name: alpine/curl
+    pull_policy: if-not-present
+  before_script:
+    - apk add --no-cache bash
+  script:
+    - ls -la
+    - curl ipinfo.io/json
+    - pwd
+    - |
+      if [ "$STACK_PREFIX" == "" ]; then
+        echo "--- xroad-cs-health-check ---"
+        scripts/check_url.sh "https://cs.${K8S_TLD_NAME}:4000/"
+        echo "--- xroad-ss1-health-check ---"
+        scripts/check_url.sh "https://ss1.${K8S_TLD_NAME}:4000/"
+        echo "--- xroad-ss2-health-check ---"
+        scripts/check_url.sh "https://ss2.${K8S_TLD_NAME}:4000/"
+        echo "--- xroad-ss3-health-check ---"
+        scripts/check_url.sh "https://ss3.${K8S_TLD_NAME}:4000/"
+      else
+        echo "--- xroad-ss-health-check ---"
+        scripts/check_url.sh "https://niis-ss.${K8S_TLD_NAME}:4000/"       
+      fi
+    - echo "--- keycloak-health-check ---"
+    - scripts/check_url.sh "http://iam.${K8S_TLD_NAME}:8089/"
+    - echo "--- artemis-health-check ---"
+    - scripts/check_url.sh "http://artemis.${K8S_TLD_NAME}:8161/"
+    - echo "--- management-api-health-check ---"
+    - scripts/check_url.sh "http://management-api.${K8S_TLD_NAME}:8080/actuator/health/"
+    - echo "--- management-api-swagger-ui-check ---"
+    - scripts/check_url.sh "http://management-api.${K8S_TLD_NAME}:8080/swagger-ui/index.html#/"
+    - echo "--- management-ui-health-check ---"
+    - scripts/check_url.sh "http://management-ui.${K8S_TLD_NAME}:8080/"
+    - echo "--- messaging-api-health-check ---"
+    - scripts/check_url.sh "http://messaging-api.${K8S_TLD_NAME}:9000/management/health/"
+    - echo "--- messaging-api-swagger-ui-check ---"
+    - scripts/check_url.sh "http://messaging-api.${K8S_TLD_NAME}:8090/swagger-ui/"
+    - export
+  allow_failure: true
+  timeout: 20m

@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "collector.fullname" . }}
+  labels:
+    {{- include "collector.labels" . | nindent 4 }}
+data:
+  settings.yaml: |
+    collector:
+      thread-count: {{ .Values.collector.threadCount }}
+      records-from-offset: {{ .Values.collector.recordsFromOffset }}
+      records-to-offset: {{ .Values.collector.recordsToOffset }}
+      repeat-min-records: {{ .Values.collector.repeatMinRecords }}
+      repeat-limit: {{ .Values.collector.repeatLimit }}
+      pid-directory: {{ .Values.collector.pidDirectory }}
+      documents-log-directory: {{ .Values.collector.documentsLogDirectory }}
+      documents-log-file-size: {{ .Values.collector.documentsLogFileSize }}
+      documents-log-max-files: {{ .Values.collector.documentsLogMaxFiles }}
+    xroad:
+      instance: {{ .Values.xroad.instance }}
+      central-server:
+        protocol: {{ .Values.xroad.centralServer.protocol }}
+        host: {{ .Values.xroad.centralServer.host }}
+        timeout: {{ .Values.xroad.centralServer.timeout }}
+      security-server:
+        protocol: {{ .Values.xroad.securityServer.protocol }}
+        host: {{ .Values.xroad.securityServer.host }}
+        timeout: {{ .Values.xroad.securityServer.timeout }}
+        tls-client-certificate: {{ .Values.xroad.securityServer.tlsClientCertificate }}
+        tls-client-key: {{ .Values.xroad.securityServer.tlsClientKey }}
+        tls-server-certificate: {{ .Values.xroad.securityServer.tlsServerCertificate }}
+      monitoring-client:
+        memberclass: {{ .Values.xroad.monitoringClient.memberclass }}
+        membercode: {{ .Values.xroad.monitoringClient.membercode }}
+        subsystemcode: {{ .Values.xroad.monitoringClient.subsystemcode }}
+    mongodb:
+      host: {{ .Values.mongodb.host }}
+      user: {{ .Values.mongodb.user }}
+      password: "PASSWORD_PLACEHOLDER"
+      tls: {{ .Values.mongodb.tls }}
+      tls-ca-file: {{ .Values.mongodb.tlsCaFile }}
+    logger:
+      name: {{ .Values.logger.name }}
+      module: {{ .Values.logger.module }}
+      level: {{ .Values.logger.level }}
+      log-path: {{ .Values.logger.logPath }}
+      heartbeat-path: {{ .Values.logger.heartbeatPath }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: messaging-api
+description: A Helm chart for deploying messaging-api for x-road
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

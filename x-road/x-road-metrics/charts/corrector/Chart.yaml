@@ -1,0 +1,7 @@
+apiVersion: v2
+name: corrector
+description: A Helm chart for X-Road-Metrics Corrector module
+
+type: application
+version: 1.1.1
+appVersion: "1.1.1"

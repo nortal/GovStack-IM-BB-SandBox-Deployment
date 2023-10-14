@@ -1,0 +1,153 @@
+# Default values for corrector.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/xroad-metrics/corrector
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+corrector:
+  threadCount: 8
+  documentsMax: 20000
+  documentsMin: 20000
+  timeoutDays: 3
+  waitOnDone: 300
+  waitOnError: 600
+  timeWindow: 600000
+  calc:
+    totalDuration: true
+    clientRequestDuration: true
+    clientResponseDuration: true
+    producerRequestDuration: true
+    producerResponseDuration: true
+    producerDurationClientView: true
+    producerDurationProducerView: true
+    producerIsDuration: true
+    requestNwDuration: true
+    responseNwDuration: true
+    requestSize: true
+    responseSize: true
+  comparisonList:
+    - 'clientMemberClass'
+    - 'requestMimeSize'
+    - 'serviceSubsystemCode'
+    - 'requestAttachmentCount'
+    - 'serviceSecurityServerAddress'
+    - 'messageProtocolVersion'
+    - 'responseSize'
+    - 'succeeded'
+    - 'clientSubsystemCode'
+    - 'responseAttachmentCount'
+    - 'serviceMemberClass'
+    - 'messageUserId'
+    - 'serviceMemberCode'
+    - 'serviceXRoadInstance'
+    - 'clientSecurityServerAddress'
+    - 'clientMemberCode'
+    - 'clientXRoadInstance'
+    - 'messageIssue'
+    - 'serviceVersion'
+    - 'requestSize'
+    - 'serviceCode'
+    - 'representedPartyClass'
+    - 'representedPartyCode'
+    - 'faultCode'
+    - 'faultString'
+    - 'responseMimeSize'
+    - 'messageId'
+  comparisonListOrphan:
+    - 'clientMemberClass'
+    - 'serviceSubsystemCode'
+    - 'serviceSecurityServerAddress'
+    - 'messageProtocolVersion'
+    - 'succeeded'
+    - 'clientSubsystemCode'
+    - 'serviceMemberClass'
+    - 'messageUserId'
+    - 'serviceMemberCode'
+    - 'serviceXRoadInstance'
+    - 'clientSecurityServerAddress'
+    - 'clientMemberCode'
+    - 'clientXRoadInstance'
+    - 'messageIssue'
+    - 'serviceVersion'
+    - 'serviceCode'
+    - 'representedPartyClass'
+    - 'representedPartyCode'
+    - 'faultCode'
+    - 'faultString'
+    - 'messageId'
+
+xroad:
+  instance: SANDBOX
+
+mongodb:
+  host: xroad-metrics-database:27017
+  user: corrector_SANDBOX
+  tls:
+  tlsCaFile:
+
+logger:
+  name: corrector
+  module: corrector
+  level: INFO
+  logPath: /var/log/xroad-metrics/corrector/logs
+  heartbeatPath: /var/log/xroad-metrics/corrector/heartbeat
+
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

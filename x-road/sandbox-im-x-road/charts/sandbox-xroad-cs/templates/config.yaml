@@ -1,0 +1,16 @@
+---
+{{- $secret := (lookup "v1" "Secret" .Release.Namespace "sandbox-xroad-cs") }}
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: sandbox-xroad-cs
+{{- if $secret }}
+data:
+  dbPassword: {{ $secret.data.dbPassword }}
+  tokenPin: {{ $secret.data.tokenPin }}
+{{- else }}
+stringData:
+  dbPassword: {{ randAlphaNum 32 | quote }}
+  tokenPin: {{ .Values.tokenPin | quote }}
+{{- end }}

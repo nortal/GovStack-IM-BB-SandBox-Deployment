@@ -1,0 +1,35 @@
+managementApi:
+  image:
+    repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/pubsub/management-api
+    tag: 0.0.1-develop
+    pullPolicy: IfNotPresent
+  port: 8080
+  args: [ ]
+  artemis:
+    remoteUrl: "amqp://artemis:5672"
+  xroadAdminClient:
+    # API key for environment must be issued manually from SS Admin UI -> Keys and Certificates -> API Keys
+    securityServerBaseUrl: "https://sandbox-xroad-ss3.sandbox-im.svc.cluster.local:4000/api/v1/"
+    apiKey: "73b11952-a4b0-4f30-badd-d3b702c4c671"
+    pubsubSubsystemIdentifier: "SANDBOX:GOV:PROVIDER:TEST"
+    apiKeyPrefix: "X-Road-ApiKey token="
+    truststore: "classpath:truststore.jks"
+    truststorePassword: "changeit"
+    disableTlsCertificateVerification: "true"
+  oauth2:
+    issuerUri: "http://iam.im.sandbox-playground.com:8089/realms/pubsub-realm"
+  cors:
+    allowedOrigins: "http://management-ui.im.sandbox-playground.com:8080/"
+    allowedMethods: "GET,POST,PUT,DELETE,OPTIONS"
+    allowedHeaders: "*"
+
+service:
+  type: NodePort
+
+serviceExt:
+  enabled: true
+  topLevelDomainName: ""
+  subnetAllowList: ""
+
+deployment:
+  replicas: 1

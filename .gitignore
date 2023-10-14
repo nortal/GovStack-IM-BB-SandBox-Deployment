@@ -1,0 +1,19 @@
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# OS X
+.DS_Store
+.Spotlight-V100
+.Trashes
+._*
+x-road/images/sandbox-xroad-ss/files/proxy-ui-api-1.0.jar
+
+# VSC IDE
+.vscode/
+_tmp/

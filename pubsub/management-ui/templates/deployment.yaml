@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: management-ui
+spec:
+  selector:
+    matchLabels:
+      app: management-ui
+  replicas: {{ .Values.deployment.replicas }}
+  template:
+    metadata:
+      labels:
+        app: management-ui
+    spec:
+      containers:
+        - name: management-ui
+          image: "{{ .Values.managementUi.image.repository }}:{{ .Values.managementUi.image.tag }}"
+          args: {{ .Values.managementUi.args }}
+          imagePullPolicy: {{ .Values.managementUi.image.pullPolicy }}
+          env:
+            - name: VUE_APP_OIDC_PROVIDER_URL
+              value: {{ .Values.managementUi.iamIssuerUri }}
+            - name: VUE_APP_OIDC_CLIENT_SECRET
+              value: {{ .Values.managementUi.oidcClientSecret }}
+            - name: VUE_APP_OIDC_CLIENT_ID
+              value: {{ .Values.managementUi.oidcClientId }}
+            - name: VUE_APP_MANAGEMENT_API_URI
+              value: {{ .Values.managementUi.managementApiUri }}
+          ports:
+            - containerPort: {{ .Values.managementUi.port }}
+

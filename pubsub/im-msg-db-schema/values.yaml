@@ -1,0 +1,12 @@
+imMsgBbSchema:
+  image:
+    repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/pubsub/schema
+    tag: 0.0.1-develop
+    pullPolicy: Always # IfNotPresent
+  args: []
+
+database:
+  schema: im_msg
+  name: im_msg_db
+  username: im_msg_usr
+  password: im_msg_pass

@@ -1,0 +1,358 @@
+{
+  "id": "pubsub-realm",
+  "realm": "pubsub-realm",
+  "enabled": true,
+  "sslRequired": "external",
+  "roles": {
+    "realm": [
+      {
+        "name": "xroad-security-officer"
+      },
+      {
+        "name": "xroad-registration-officer"
+      },
+      {
+        "name": "xroad-system-administrator"
+      },
+      {
+        "name": "xroad-securityserver-observer"
+      },
+      {
+        "name": "xroad-service-administrator"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "security-officer",
+      "enabled": true,
+      "email": "secoff@pubsub-xroad.test",
+      "emailVerified": true,
+      "firstName": "X-Road",
+      "lastName": "Security Officer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "security-officer"
+        }
+      ],
+      "realmRoles": [
+        "xroad-security-officer"
+      ]
+    },
+    {
+      "username": "registration-officer",
+      "enabled": true,
+      "email": "regoff@pubsub-xroad.test",
+      "emailVerified": true,
+      "firstName": "X-Road",
+      "lastName": "Registration Officer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "registration-officer"
+        }
+      ],
+      "realmRoles": [
+        "xroad-registration-officer"
+      ]
+    },
+    {
+      "username": "system-administrator",
+      "enabled": true,
+      "email": "sysadm@pubsub-xroad.test",
+      "emailVerified": true,
+      "firstName": "X-Road",
+      "lastName": "System Administrator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "system-administrator"
+        }
+      ],
+      "realmRoles": [
+        "xroad-system-administrator"
+      ]
+    },
+    {
+      "username": "securityserver-observer",
+      "enabled": true,
+      "email": "secobs@pubsub-xroad.test",
+      "emailVerified": true,
+      "firstName": "X-Road",
+      "lastName": "Securityserver Observer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "securityserver-observer"
+        }
+      ],
+      "realmRoles": [
+        "xroad-securityserver-observer"
+      ]
+    },
+    {
+      "username": "service-administrator",
+      "enabled": true,
+      "email": "seradm@pubsub-xroad.test",
+      "emailVerified": true,
+      "firstName": "X-Road",
+      "lastName": "Service Administrator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "service-administrator"
+        }
+      ],
+      "realmRoles": [
+        "xroad-service-administrator"
+      ]
+    },
+    {
+      "username": "xrd",
+      "enabled": true,
+      "email": "superuser@pubsub-xroad.test",
+      "emailVerified": true,
+      "firstName": "X-Road",
+      "lastName": "Superuser",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "secret"
+        }
+      ],
+      "realmRoles": [
+        "xroad-securityserver-observer",
+        "xroad-system-administrator",
+        "xroad-service-administrator",
+        "xroad-registration-officer",
+        "xroad-security-officer"
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "pubsub-management-ui",
+      "name": "PubSub Management UI Client",
+      "description": "X-Road PubSub Management UI Application OIDC Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://management-ui.${K8S_TLD_NAME}:8080/*"
+      ],
+      "webOrigins": [
+        "http://management-ui.${K8S_TLD_NAME}:8080/"
+      ],
+      "secret": "pubsub-management-ui-secret",
+      "attributes": {
+        "access.token.lifespan": 900,
+        "refresh.token.lifespan": 1800
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "foo",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "pubsub-management-ui-dev",
+      "name": "PubSub Management UI DEV Client",
+      "description": "X-Road PubSub Management UI Application OIDC Client in DEV environment (localhost)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:5173/*"
+      ],
+      "secret": "pubsub-management-ui-dev-secret",
+      "attributes": {
+        "access.token.lifespan": 900,
+        "refresh.token.lifespan": 1800
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "foo",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "xroad-security-server-ss1",
+      "name": "X-Road Management Security Server",
+      "description": "X-Road Management Security Server Admin UI OIDC Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "https://ss1.${K8S_TLD_NAME}:4000/*"
+      ],
+      "webOrigins": [
+        "https://ss1.${K8S_TLD_NAME}:4000/"
+      ],
+      "secret": "xroad-security-server-ss1-secret",
+      "attributes": {
+        "access.token.lifespan": 900,
+        "refresh.token.lifespan": 1800
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "foo",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "xroad-security-server-ss2",
+      "name": "X-Road Mock Service Security Server",
+      "description": "X-Road Mock Service Security Server Admin UI OIDC Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "https://ss2.${K8S_TLD_NAME}:4000/*"
+      ],
+      "webOrigins": [
+        "https://ss2.${K8S_TLD_NAME}:4000/"
+      ],
+      "secret": "xroad-security-server-ss2-secret",
+      "attributes": {
+        "access.token.lifespan": 900,
+        "refresh.token.lifespan": 1800
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "foo",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "xroad-security-server-ss3",
+      "name": "X-Road Mock Client Security Server",
+      "description": "X-Road Mock Client Security Server Admin UI OIDC Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "https://ss3.${K8S_TLD_NAME}:4000/*"
+      ],
+      "webOrigins": [
+        "https://ss3.${K8S_TLD_NAME}:4000/"
+      ],
+      "secret": "xroad-security-server-ss3-secret",
+      "attributes": {
+        "access.token.lifespan": 900,
+        "refresh.token.lifespan": 1800
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "foo",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "xroad-security-server-ss4",
+      "name": "X-Road Mock Client Security Server 4",
+      "description": "X-Road Mock Client Security Server 4 Admin UI OIDC Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "https://niis-ss.${STACK_PREFIX}.${K8S_TLD_NAME}:4000/*"
+      ],
+      "webOrigins": [
+        "https://niis-ss.${STACK_PREFIX}.${K8S_TLD_NAME}:4000/"
+      ],
+      "secret": "xroad-security-server-ss4-secret",
+      "attributes": {
+        "access.token.lifespan": 900,
+        "refresh.token.lifespan": 1800
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "foo",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ]
+}

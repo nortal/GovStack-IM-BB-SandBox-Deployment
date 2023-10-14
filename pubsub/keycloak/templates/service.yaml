@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.keycloak.httpPort }}
+      targetPort: {{ .Values.keycloak.httpPort }}
+  type: {{ .Values.service.type }}

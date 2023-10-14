@@ -1,0 +1,102 @@
+# Default values for collector.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: 466724658082.dkr.ecr.eu-north-1.amazonaws.com/im/xroad-metrics/collector
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+cronjob:
+  name: xroad-metrics-collector-cronjob
+  schedule: "0 */3 * * *" # every 3 hours
+
+collector:
+  threadCount: 10
+  recordsFromOffset: 31536000
+  recordsToOffset: 10
+  repeatMinRecords: 50
+  repeatLimit: 500
+  pidDirectory: "/var/run/xroad-metrics/collector"
+  documentsLogDirectory: ""
+  documentsLogFileSize: 0
+  documentsLogMaxFiles: 0
+xroad:
+  instance: "SANDBOX"
+  centralServer:
+    protocol: "http://"
+    host: "sandbox-xroad-cs"
+    timeout: 10
+  securityServer:
+    protocol: "https://"
+    host: "sandbox-xroad-ss3:8443"
+    timeout: 60.0
+    tlsClientCertificate: ""
+    tlsClientKey: ""
+    tlsServerCertificate: "false"
+  monitoringClient:
+    memberclass: "GOV"
+    membercode: "PROVIDER"
+    subsystemcode: "TEST"
+mongodb:
+  host: "xroad-metrics-database:27017"
+  user: "collector_SANDBOX"
+  tls: ""
+  tlsCaFile: ""
+logger:
+  name: "collector"
+  module: "collector"
+  level: "INFO"
+  logPath: "/var/log/xroad-metrics/collector/logs"
+  heartbeatPath: "/var/log/xroad-metrics/collector/heartbeat"
+
+
+imagePullSecrets: [ ]
+nameOverride: ""
+fullnameOverride: ""
+
+
+podAnnotations: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+  # capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: { }
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
