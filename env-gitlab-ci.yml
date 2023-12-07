@@ -1,0 +1,123 @@
+
+deploy-xroad-cs-ss-to-eks:
+  rules:
+    - if: $STACK_PREFIX == ""
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  script:
+    - !reference [.xroad_deploy]
+
+deploy-xroad-ss-to-eks:
+  rules:
+    - if: $STACK_PREFIX != ""
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  script:
+    - !reference [.xroad_deploy_extra_ss_vanilla]
+
+deploy-keycloak-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  script:
+    - !reference [.keycloak_deploy]
+
+uninstall-x_road_metrics-from-eks:
+  rules:
+    - if: $STACK_PREFIX == ""
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  stage: uninstall
+  script:
+    - !reference [.x_road_metrics_uninstall]
+  # On first run there is no installed x-road metrics
+  allow_failure: true
+
+deploy-x-road-metrics-to-eks:
+  rules:
+    - if: $STACK_PREFIX == ""
+  environment:
+    name: $ENV_NAME
+  needs:
+    - uninstall-x_road_metrics-from-eks
+  extends: .deploy-generic-to-eks
+  script:
+    - !reference [.x_road_metrics_deploy]
+
+deploy-artemis-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  script:
+    - !reference [.x_road_artemis_deploy]
+
+deploy-im-msg-db-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  script:
+    - !reference [.x_road_im-msg-db_deploy]
+
+uninstall-im-msg-db-schema-from-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  stage: uninstall
+  script:
+    - !reference [.im-msg-db-schema_uninstall]
+  # On first run there is no installed x-road im msg db schema
+  allow_failure: true
+
+deploy-im-msg-db-schema-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  needs:
+    - uninstall-im-msg-db-schema-from-eks
+    - deploy-im-msg-db-to-eks
+  script:
+    - !reference [.x_road_im-msg-db-schema_deploy]
+
+deploy-messaging-api-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  needs:
+    - deploy-im-msg-db-schema-to-eks
+    - deploy-artemis-to-eks
+  script:
+    - !reference [.x_road_messaging-api_deploy]
+
+deploy-management-api-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  needs:
+    - deploy-im-msg-db-schema-to-eks
+    - deploy-artemis-to-eks
+  script:
+    - !reference [.x_road_management-api_deploy]
+
+deploy-xroad-subscriber-mock:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  needs:
+    - deploy-im-msg-db-schema-to-eks
+    - deploy-artemis-to-eks
+  script:
+    - !reference [.x_road_subscriber-mock_deploy]
+
+deploy-management-ui-to-eks:
+  environment:
+    name: $ENV_NAME
+  extends: .deploy-generic-to-eks
+  needs:
+    - deploy-im-msg-db-schema-to-eks
+    - deploy-artemis-to-eks
+    - deploy-management-api-to-eks
+  script:
+    - !reference [.x_road_management-ui_deploy]

@@ -1,0 +1,251 @@
+
+.login_to_aws_script: &login_to_aws_script
+  - echo "--- login_to_aws_script ---"
+  - >
+    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+    $(aws sts assume-role-with-web-identity
+    --role-arn ${AWS_ROLE_ARN}
+    --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+    --web-identity-token ${GITLAB_OIDC_TOKEN}
+    --duration-seconds 3600
+    --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+    --output text))
+  - aws sts get-caller-identity
+  - export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
+
+.login_to_ecr_script: &login_to_ecr_script
+  - echo "--- login_to_ecr_script ---"
+  - aws ecr get-login-password |
+    docker login --username AWS --password-stdin
+    ${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+
+.login_to_eks_script: &login_to_eks_script
+  - echo "--- login_to_eks_script ---"
+  - aws eks update-kubeconfig --name ${AWS_EKS_CLUSTER_NAME}
+
+.xroad_deploy:
+  - echo "--- xroad_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait --timeout 60m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set apiService.create=true
+    --set global.serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string global.storageClassName=${K8S_CS_SS_DB_STORAGE_CLASS_NAME}
+    --set-string global.serviceExt.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string global.serviceExt.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    --set-string global.serviceExt.acmCertificateArn="${K8S_AWS_ACM_CERTIFICATE_ARN}"
+    --set-string xroad-ss.tokenPin="1234"
+    --set-string xroad-cs.tokenPin="1234"
+    --set-string sandbox-im-xroad-cs.serverTag="${X_ROAD_IMAGE_TAG}-cs"
+    --set-string sandbox-im-x-road-ss.servers.ss1="${X_ROAD_IMAGE_TAG}-ss1"
+    --set-string sandbox-im-x-road-ss.servers.ss2="${X_ROAD_IMAGE_TAG}-ss2"
+    --set-string sandbox-im-x-road-ss.servers.ss3="${X_ROAD_IMAGE_TAG}-ss3"
+    --set-string sandbox-im-x-road-ss.iamIssuerUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm"
+    --set-string sandbox-im-x-road-ss.iamAuthorizationUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm/protocol/openid-connect/auth"
+    --set-string sandbox-im-x-road-ss.iamTokenUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm/protocol/openid-connect/token"
+    --set-string sandbox-im-x-road-ss.iamUserInfoUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm/protocol/openid-connect/userinfo"
+    --set-string global.registry="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+    sandbox-im-xroad ./x-road/sandbox-im-x-road
+
+.xroad_deploy_extra_ss_gofore:
+  - echo "--- xroad_deploy_extra_ss_gofore ---"
+  - helm upgrade --install --atomic --debug
+    --wait --timeout 60m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set apiService.create=true
+    --set global.serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string global.storageClassName=${K8S_CS_SS_DB_STORAGE_CLASS_NAME}
+    --set-string global.serviceExt.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string global.serviceExt.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    --set-string global.serviceExt.acmCertificateArn="${K8S_AWS_ACM_CERTIFICATE_ARN}"
+    --set-string xroad-ss.tokenPin="1234"
+    --set-string xroad-cs.tokenPin="1234"
+    --set-string servers.ss1="${X_ROAD_IMAGE_TAG}"
+    --set-string iamIssuerUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm"
+    --set-string iamAuthorizationUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm/protocol/openid-connect/auth"
+    --set-string iamTokenUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm/protocol/openid-connect/token"
+    --set-string iamUserInfoUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm/protocol/openid-connect/userinfo"
+    --set-string global.registry="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+    sandbox-im-xroad ./x-road/sandbox-im-x-road/charts/sandbox-xroad-ss
+
+.xroad_deploy_extra_ss_vanilla:
+  - echo "--- xroad_deploy_extra_ss_vanilla ---"
+  - helm upgrade --install --atomic --debug
+    --wait --timeout 60m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set-string global.storageClassName=${K8S_CS_SS_DB_STORAGE_CLASS_NAME}
+    --set-string global.serviceExt.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string global.serviceExt.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    x-road-niis-ss ./x-road-niis-ss
+
+.keycloak_deploy:
+  - echo "--- keycloak_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string ingress.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string ingress.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    --set-string config.realmConfigFile="config/pubsub-realm-${ENV_NAME}.json"
+    keycloak-chart ./pubsub/keycloak
+
+.x_road_metrics_uninstall:
+  - echo "--- x_road_metrics_uninstall ---"
+  - helm uninstall --debug  --wait  --timeout 60m
+    --namespace "$K8S_NAMESPACE"
+    xroad-metrics
+
+.x_road_metrics_deploy:
+  - echo "--- x_road_metrics_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set-string database.initDb.image="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/xroad-metrics/init-db"
+    --set-string database.initDb.image_tag=${X_ROAD_METRICS_IMAGE_TAG}
+    --set-string collector.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/xroad-metrics/collector"
+    --set-string collector.image.tag=${X_ROAD_METRICS_IMAGE_TAG}
+    --set-string corrector.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/xroad-metrics/corrector"
+    --set-string corrector.image.tag=${X_ROAD_METRICS_IMAGE_TAG}
+    xroad-metrics ./x-road/x-road-metrics
+
+.x_road_artemis_deploy:
+  - echo "--- x_road_artemis_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string artemis.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string artemis.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    artemis ./pubsub/artemis/
+
+.x_road_im-msg-db_deploy:
+  - echo "--- x_road_im-msg-db_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set-string topLevelDomainName=${K8S_TLD_NAME}
+    --set-string subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    im-msg-db oci://registry-1.docker.io/bitnamicharts/postgresql
+    -f ./pubsub/im-msg-db/values.yaml
+
+.im-msg-db-schema_uninstall:
+  - echo "--- im-msg-db-schema_uninstall ---"
+  - helm uninstall --debug  --wait  --timeout 60m
+    --namespace "$K8S_NAMESPACE"
+    im-msg-db-schema
+
+.x_road_im-msg-db-schema_deploy:
+  - echo "--- x_road_im-msg-db-schema_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set-string imMsgBbSchema.image.tag=${PUBSUB_DB_SCHEMA_IMAGE_TAG}
+    --set-string imMsgBbSchema.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/pubsub/schema"
+    im-msg-db-schema ./pubsub/im-msg-db-schema/
+
+.x_road_messaging-api_deploy:
+  - echo "--- x_road_messaging-api_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string ingress.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string ingress.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    --set-string messagingApi.image.tag=${PUBSUB_MESSAGING_API_IMAGE_TAG}
+    --set-string messagingApi.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/pubsub/messaging-api"
+    messaging-api ./pubsub/messaging-api/
+
+.x_road_management-api_deploy:
+  - echo "--- x_road_management-api_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string serviceExt.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string serviceExt.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    --set-string managementApi.image.tag=${PUBSUB_MANAGEMENT_API_IMAGE_TAG}
+    --set-string managementApi.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/pubsub/management-api"
+    --set-string managementApi.xroadAdminClient.securityServerBaseUrl="${MANAGEMENT_API_XROAD_SECURITY_SERVER_BASE_URL}"
+    --set-string managementApi.xroadAdminClient.apiKey="${MANAGEMENT_API_XROAD_ADMIN_API_KEY}"
+    --set-string managementApi.xroadAdminClient.pubsubSubsystemIdentifier="${MANAGEMENT_API_XROAD_PUBSUB_SUBSYSTEM_IDENTIFIER}"
+    --set-string managementApi.oauth2.issuerUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm"
+    --set-string managementApi.cors.allowedOrigins="http://management-ui.${K8S_TLD_NAME}:8080"
+    management-api ./pubsub/management-api/
+
+.x_road_management-ui_deploy:
+  - echo "--- x_road_management-ui_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set serviceExt.enabled=${K8S_EXPOSE_SERVICES}
+    --set-string ingress.topLevelDomainName=${K8S_TLD_NAME}
+    --set-string ingress.subnetAllowList="${K8S_SUBNET_ALLOW_LIST}"
+    --set-string managementUi.image.tag=${PUBSUB_MANAGEMENT_UI_IMAGE_TAG}
+    --set-string managementUi.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/pubsub/management-ui"
+    --set-string managementUi.iamIssuerUri="http://iam.${K8S_TLD_NAME}:8089/realms/pubsub-realm"
+    --set-string managementUi.managementApiUri="http://management-api.${K8S_TLD_NAME}:8080"
+    management-ui ./pubsub/management-ui/
+
+.x_road_subscriber-mock_deploy:
+  - echo "--- x_road_subscriber-mock_deploy ---"
+  - helm upgrade --install --atomic --debug
+    --wait  --timeout 15m
+    --create-namespace
+    --namespace "$K8S_NAMESPACE"
+    --set-string subscriberMock.image.tag=${PUBSUB_SUBSCRIBER_MOCK_IMAGE_TAG}
+    --set-string subscriberMock.image.repository="${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/im/pubsub/subscriber-mock"
+    subscriber-mock ./pubsub/subscriber-mock/
+
+.deploy-generic-to-eks:
+  stage: deploy
+  image:
+    name: alpine/k8s:1.27.3
+    pull_policy: if-not-present
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: <<your gitlab OIDC token>>
+  before_script:
+    - *login_to_aws_script
+    - *login_to_eks_script
+  after_script:
+    - export
+
+# It is disabled, because we have issue with Docker in Docker build
+.build-job:
+  stage: build
+  image:
+    name: docker:latest
+    pull_policy: if-not-present
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache python3 py3-pip bash curl
+    - pip3 install --no-cache-dir awscli
+  script:
+    - echo "--- build-job-build ---"
+    - curl ipinfo.io/json
+    - pwd
+    - ls -la
+    - df -h
+    - docker image ls
+    - docker ps -a
+    - *login_to_ecr_script
+    - export
+    - ./x-road/images/docker-build.sh -p -t "${IMAGE_TAG}"
+      -r "${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+  after_script:
+    - echo "--- after_script_for_debug ---"
+    - docker image ls
+    - docker ps -a
+  allow_failure: true
