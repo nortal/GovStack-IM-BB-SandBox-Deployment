@@ -1,0 +1,86 @@
+
+workflow:
+  name: "Deploy to '$K8S_NAMESPACE' in '$ENV_NAME' environment"
+  rules:
+    # Running from the GitLab Web UI only
+    - if: $CI_PIPELINE_SOURCE == "web" && $ENV_NAME == "nortal" && $STACK_PREFIX == ""
+      variables:
+        K8S_NAMESPACE: "sandbox-im"
+        K8S_TLD_NAME: <<nortal_tld>>
+    - if: $CI_PIPELINE_SOURCE == "web" && $ENV_NAME == "nortal" && $STACK_PREFIX != ""
+      variables:
+        K8S_NAMESPACE: "${STACK_PREFIX}-sandbox-im"
+        K8S_TLD_NAME: "${STACK_PREFIX}.<<nortal_tld>>"
+    - if: $CI_PIPELINE_SOURCE == "web" && $ENV_NAME == "gofore" && $STACK_PREFIX == ""
+      variables:
+        K8S_NAMESPACE: "sandbox-im"
+        K8S_TLD_NAME: <<gofore_tld>>
+    - if: $CI_PIPELINE_SOURCE == "web" && $ENV_NAME == "gofore" && $STACK_PREFIX != ""
+      variables:
+        K8S_NAMESPACE: "${STACK_PREFIX}-sandbox-im"
+        K8S_TLD_NAME: "${STACK_PREFIX}.<<gofore_tld>>"
+
+variables:
+  ENV_NAME:
+    value: "nortal"
+    options:
+      - "nortal"
+      - "gofore"
+    description: "Environment to deploy. Set to 'nortal' by default"
+  STACK_PREFIX:
+    value: ""
+    options:
+      - ""
+      - "ss04"
+      - "ss05"
+      - "ss06"
+    description: "Namespace prefix which will be part of TLD in DNS"
+  X_ROAD_IMAGE_TAG:
+    value: "7.2.2-IAM"
+    description: "X-Road SS and CS image tag prefix. ${X_ROAD_IMAGE_TAG}-cs, ${X_ROAD_IMAGE_TAG}-ss1, ${X_ROAD_IMAGE_TAG}-ss2, ${X_ROAD_IMAGE_TAG}-ss3 will be installed"
+  X_ROAD_METRICS_IMAGE_TAG:
+    value: "latest"
+    description: "X-Road Metrics image tag"
+  PUBSUB_DB_SCHEMA_IMAGE_TAG:
+    value: "0.0.1-demo-ms1-ms2-43bfc585"
+    description: "PubSub DB image tag"
+  PUBSUB_MANAGEMENT_API_IMAGE_TAG:
+    value: "0.0.1-demo-ms1-ms2-43bfc585"
+    description: "PubSub Management API image tag"
+  PUBSUB_MANAGEMENT_UI_IMAGE_TAG:
+    value: "0.0.1-demo-ms1-ms2-43bfc585"
+    description: "PubSub Management UI image tag"
+  PUBSUB_MESSAGING_API_IMAGE_TAG:
+    value: "0.0.1-demo-ms1-ms2-43bfc585"
+    description: "PubSub Messaging API image tag"
+  PUBSUB_SUBSCRIBER_MOCK_IMAGE_TAG:
+    value: "0.0.1-demo-ms1-ms2-43bfc585"
+    description: "PubSub Subscriber Mock image tag"
+  MANAGEMENT_API_XROAD_SECURITY_SERVER_BASE_URL:
+    value: "https://sandbox-xroad-ss3.sandbox-im.svc.cluster.local:4000/api/v1/"
+    description: "X-Road Admin API base URL"
+  MANAGEMENT_API_XROAD_ADMIN_API_KEY:
+    value: <<default value>>
+    options:
+      - <<nortal key>>
+      - <<gofore key>>
+    description: "X-Road Admin API key. nortal-ss3=..., gofore-ss3=... . Should be generated manually 
+    from SS Admin UI -> Keys and Certificates -> API Keys. Remove variable to overwrite default value."
+  MANAGEMENT_API_XROAD_PUBSUB_SUBSYSTEM_IDENTIFIER:
+    value: "SANDBOX:GOV:PROVIDER:TEST"
+    description: "X-Road PubSub subsystem identifier"
+
+  K8S_EXPOSE_SERVICES: "true"
+  # With this parameter, we could define what k8s storage class to use
+  # for Persistent Volumes. If it's not set will be used default cluster storage class.
+  #K8S_CS_SS_DB_STORAGE_CLASS_NAME: ""
+
+stages:
+  - uninstall
+  - deploy
+  - health_check
+
+include:
+  - .common-gitlab-ci.yml
+  - .env-gitlab-ci.yml
+  - tests/.gitlab-ci.yml
